@@ -2,10 +2,10 @@
 
 import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function AdminLoginPage() {
+function AdminLoginContent() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -36,22 +36,27 @@ export default function AdminLoginPage() {
     setLoading(true);
     setError(null);
 
-    const response = await fetch("/api/admin/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password }),
-    });
+    try {
+      const response = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
 
-    const data = await response.json();
-    setLoading(false);
+      const data = await response.json();
+      setLoading(false);
 
-    if (!response.ok) {
-      setError(data.message || "No se pudo iniciar sesión.");
-      return;
+      if (!response.ok) {
+        setError(data.message || "No se pudo iniciar sesión.");
+        return;
+      }
+
+      router.push("/admin");
+      router.refresh();
+    } catch {
+      setLoading(false);
+      setError("Ocurrió un error al iniciar sesión.");
     }
-
-    router.push("/admin");
-    router.refresh();
   }
 
   return (
@@ -99,5 +104,31 @@ export default function AdminLoginPage() {
       </section>
       <Footer />
     </main>
+  );
+}
+
+function AdminLoginFallback() {
+  return (
+    <main>
+      <Navbar />
+      <section className="mx-auto max-w-xl px-6 py-14 md:py-20">
+        <div className="panel p-8">
+          <p className="text-xs uppercase tracking-[0.35em] text-white/45">
+            Acceso admin
+          </p>
+          <h1 className="mt-3 text-4xl font-black uppercase">Panel secreto</h1>
+          <p className="mt-4 text-white/70">Cargando acceso...</p>
+        </div>
+      </section>
+      <Footer />
+    </main>
+  );
+}
+
+export default function AdminLoginPage() {
+  return (
+    <Suspense fallback={<AdminLoginFallback />}>
+      <AdminLoginContent />
+    </Suspense>
   );
 }
