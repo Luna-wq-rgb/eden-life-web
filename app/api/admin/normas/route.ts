@@ -41,7 +41,7 @@ export async function GET() {
       );
     }
 
-    const data = readRules();
+    const data = await readRules();
     return NextResponse.json(data);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Error desconocido";
@@ -82,7 +82,7 @@ export async function POST(req: Request) {
       );
     }
 
-    writeRules(body);
+    await writeRules(body);
 
     return NextResponse.json({ ok: true });
   } catch (error) {

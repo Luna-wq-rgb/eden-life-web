@@ -2,7 +2,7 @@
 
 import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type RuleGroup = {
   title: string;
@@ -22,12 +22,29 @@ type RulesDocument = {
   categorias: RuleCategory[];
 };
 
-const rulesData = require("@/data/normas.json") as RulesDocument;
-
 export default function NormasPage() {
-  const categorias = useMemo(() => rulesData.categorias ?? [], []);
-  const [activeId, setActiveId] = useState(categorias[0]?.id ?? "");
+  const [rulesData, setRulesData] = useState<RulesDocument>({ categorias: [] });
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [activeId, setActiveId] = useState("");
+
+  useEffect(() => {
+    fetch("/api/normas", { cache: "no-store" })
+      .then(async (res) => {
+        const json = await res.json();
+        if (!res.ok) {
+          throw new Error(json.message || "No se pudieron cargar las normativas.");
+        }
+        setRulesData(json);
+        setActiveId(json.categorias?.[0]?.id ?? "");
+      })
+      .catch(() => {
+        setRulesData({ categorias: [] });
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const categorias = useMemo(() => rulesData.categorias ?? [], [rulesData]);
 
   const activeCategory =
     categorias.find((category) => category.id === activeId) ?? categorias[0];
@@ -70,50 +87,60 @@ export default function NormasPage() {
               <h2 className="mt-2 text-2xl font-black uppercase">Secciones</h2>
             </div>
 
-            <div className="space-y-3">
-              {categorias.map((category) => {
-                const isActive = activeCategory?.id === category.id;
+            {loading ? (
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-white/65">
+                Cargando categorías...
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {categorias.map((category) => {
+                  const isActive = activeCategory?.id === category.id;
 
-                return (
-                  <button
-                    key={category.id}
-                    type="button"
-                    onClick={() => {
-                      setActiveId(category.id);
-                      setSearch("");
-                    }}
-                    className={[
-                      "w-full rounded-2xl border px-4 py-4 text-left transition duration-300",
-                      isActive
-                        ? "border-white/25 bg-white/10 shadow-[0_0_25px_rgba(255,255,255,0.06)]"
-                        : "border-white/10 bg-white/[0.03] hover:bg-white/[0.06]",
-                    ].join(" ")}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-2xl">
-                        {category.emoji}
-                      </div>
+                  return (
+                    <button
+                      key={category.id}
+                      type="button"
+                      onClick={() => {
+                        setActiveId(category.id);
+                        setSearch("");
+                      }}
+                      className={[
+                        "w-full rounded-2xl border px-4 py-4 text-left transition duration-300",
+                        isActive
+                          ? "border-white/25 bg-white/10 shadow-[0_0_25px_rgba(255,255,255,0.06)]"
+                          : "border-white/10 bg-white/[0.03] hover:bg-white/[0.06]",
+                      ].join(" ")}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-2xl">
+                          {category.emoji}
+                        </div>
 
-                      <div className="min-w-0">
-                        <p className="text-xs uppercase tracking-[0.25em] text-white/45">
-                          {category.label}
-                        </p>
-                        <h3 className="mt-2 text-lg font-bold uppercase">
-                          {category.title}
-                        </h3>
-                        <p className="mt-2 line-clamp-2 text-sm text-white/60">
-                          {category.intro}
-                        </p>
+                        <div className="min-w-0">
+                          <p className="text-xs uppercase tracking-[0.25em] text-white/45">
+                            {category.label}
+                          </p>
+                          <h3 className="mt-2 text-lg font-bold uppercase">
+                            {category.title}
+                          </h3>
+                          <p className="mt-2 line-clamp-2 text-sm text-white/60">
+                            {category.intro}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </aside>
 
           <div className="space-y-6">
-            {activeCategory ? (
+            {loading ? (
+              <section className="panel p-6">
+                <p className="text-white/70">Cargando normativas...</p>
+              </section>
+            ) : activeCategory ? (
               <section
                 key={activeCategory.id}
                 className="panel animate-[fadeIn_.25s_ease] p-6 md:p-8"

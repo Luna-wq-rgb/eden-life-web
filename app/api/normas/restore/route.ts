@@ -1,19 +1,21 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 
-export async function POST(req:Request){
+export async function POST(req: Request) {
+  const body = await req.json();
+  const supabase = getSupabaseAdmin();
 
- const body = await req.json();
+  const { error } = await supabase
+    .from("rules")
+    .upsert({
+      id: "main",
+      content: body.old_content,
+      updated_at: new Date().toISOString()
+    });
 
- const supabase = getSupabaseAdmin();
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 
- await supabase
- .from("rules")
- .update({
-  content: body.old_content
- })
- .eq("id",body.rule_id);
-
- return NextResponse.json({ok:true})
-
+  return NextResponse.json({ ok: true });
 }
