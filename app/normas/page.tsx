@@ -4,9 +4,17 @@ import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
 import { useEffect, useMemo, useState } from "react";
 
+type RuleTableColumn = {
+  title: string;
+  items: string[];
+};
+
 type RuleGroup = {
   title: string;
   points: string[];
+  table?: {
+    columns: RuleTableColumn[];
+  };
 };
 
 type RuleCategory = {
@@ -51,14 +59,27 @@ export default function NormasPage() {
 
   const filteredRules = useMemo(() => {
     if (!activeCategory) return [];
+
     const query = search.trim().toLowerCase();
 
     if (!query) return activeCategory.rules;
 
     return activeCategory.rules.filter((rule) => {
       const inTitle = rule.title.toLowerCase().includes(query);
-      const inPoints = rule.points.some((point) => point.toLowerCase().includes(query));
-      return inTitle || inPoints;
+      const inPoints = rule.points.some((point) =>
+        point.toLowerCase().includes(query)
+      );
+
+      const inTable =
+        rule.table?.columns.some((column) => {
+          const inColumnTitle = column.title.toLowerCase().includes(query);
+          const inItems = column.items.some((item) =>
+            item.toLowerCase().includes(query)
+          );
+          return inColumnTitle || inItems;
+        }) ?? false;
+
+      return inTitle || inPoints || inTable;
     });
   }, [activeCategory, search]);
 
@@ -185,14 +206,35 @@ export default function NormasPage() {
                       >
                         <h3 className="text-xl font-bold">{rule.title}</h3>
 
-                        <ul className="mt-4 space-y-3 text-white/75">
-                          {rule.points.map((point, pointIndex) => (
-                            <li key={pointIndex} className="flex gap-3">
-                              <span className="mt-1 text-white/45">•</span>
-                              <span>{point}</span>
-                            </li>
-                          ))}
-                        </ul>
+                        {rule.table?.columns?.length ? (
+                          <div className="mt-5 grid gap-4 md:grid-cols-3">
+                            {rule.table.columns.map((column, columnIndex) => (
+                              <div
+                                key={columnIndex}
+                                className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
+                              >
+                                <h4 className="mb-4 text-center text-lg font-bold uppercase text-white">
+                                  {column.title}
+                                </h4>
+
+                                <ul className="space-y-2 text-center text-white/75">
+                                  {column.items.map((item, itemIndex) => (
+                                    <li key={itemIndex}>{item}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <ul className="mt-4 space-y-3 text-white/75">
+                            {rule.points.map((point, pointIndex) => (
+                              <li key={pointIndex} className="flex gap-3">
+                                <span className="mt-1 text-white/45">•</span>
+                                <span>{point}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
                       </article>
                     ))
                   ) : (

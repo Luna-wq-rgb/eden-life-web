@@ -3,9 +3,17 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
+type RuleTableColumn = {
+  title: string;
+  items: string[];
+};
+
 type RuleGroup = {
   title: string;
   points: string[];
+  table?: {
+    columns: RuleTableColumn[];
+  };
 };
 
 type RuleCategory = {
@@ -71,9 +79,9 @@ export default function AdminNormativasPage() {
       rules: [
         {
           title: "Nueva regla",
-          points: ["Escribe aquí la norma"],
-        },
-      ],
+          points: ["Escribe aquí la norma"]
+        }
+      ]
     });
     setData(copy);
   }
@@ -90,7 +98,7 @@ export default function AdminNormativasPage() {
     const copy = structuredClone(data);
     copy.categorias[catIndex].rules.push({
       title: "Nueva regla",
-      points: ["Escribe aquí la norma"],
+      points: ["Escribe aquí la norma"]
     });
     setData(copy);
   }
@@ -116,6 +124,101 @@ export default function AdminNormativasPage() {
     setData(copy);
   }
 
+  function enableTableMode(catIndex: number, ruleIndex: number) {
+    if (!data) return;
+    const copy = structuredClone(data);
+    copy.categorias[catIndex].rules[ruleIndex].table = {
+      columns: [
+        { title: "Columna 1", items: ["Elemento 1"] },
+        { title: "Columna 2", items: ["Elemento 1"] },
+        { title: "Columna 3", items: ["Elemento 1"] }
+      ]
+    };
+    copy.categorias[catIndex].rules[ruleIndex].points = [];
+    setData(copy);
+  }
+
+  function disableTableMode(catIndex: number, ruleIndex: number) {
+    if (!data) return;
+    const copy = structuredClone(data);
+    copy.categorias[catIndex].rules[ruleIndex].table = undefined;
+    copy.categorias[catIndex].rules[ruleIndex].points = ["Escribe aquí la norma"];
+    setData(copy);
+  }
+
+  function updateColumnTitle(
+    catIndex: number,
+    ruleIndex: number,
+    columnIndex: number,
+    value: string
+  ) {
+    if (!data) return;
+    const copy = structuredClone(data);
+    const table = copy.categorias[catIndex].rules[ruleIndex].table;
+    if (!table) return;
+    table.columns[columnIndex].title = value;
+    setData(copy);
+  }
+
+  function updateColumnItem(
+    catIndex: number,
+    ruleIndex: number,
+    columnIndex: number,
+    itemIndex: number,
+    value: string
+  ) {
+    if (!data) return;
+    const copy = structuredClone(data);
+    const table = copy.categorias[catIndex].rules[ruleIndex].table;
+    if (!table) return;
+    table.columns[columnIndex].items[itemIndex] = value;
+    setData(copy);
+  }
+
+  function addColumn(catIndex: number, ruleIndex: number) {
+    if (!data) return;
+    const copy = structuredClone(data);
+    const table = copy.categorias[catIndex].rules[ruleIndex].table;
+    if (!table) return;
+    table.columns.push({
+      title: `Columna ${table.columns.length + 1}`,
+      items: ["Elemento 1"]
+    });
+    setData(copy);
+  }
+
+  function removeColumn(catIndex: number, ruleIndex: number, columnIndex: number) {
+    if (!data) return;
+    const copy = structuredClone(data);
+    const table = copy.categorias[catIndex].rules[ruleIndex].table;
+    if (!table) return;
+    table.columns.splice(columnIndex, 1);
+    setData(copy);
+  }
+
+  function addColumnItem(catIndex: number, ruleIndex: number, columnIndex: number) {
+    if (!data) return;
+    const copy = structuredClone(data);
+    const table = copy.categorias[catIndex].rules[ruleIndex].table;
+    if (!table) return;
+    table.columns[columnIndex].items.push("Nuevo elemento");
+    setData(copy);
+  }
+
+  function removeColumnItem(
+    catIndex: number,
+    ruleIndex: number,
+    columnIndex: number,
+    itemIndex: number
+  ) {
+    if (!data) return;
+    const copy = structuredClone(data);
+    const table = copy.categorias[catIndex].rules[ruleIndex].table;
+    if (!table) return;
+    table.columns[columnIndex].items.splice(itemIndex, 1);
+    setData(copy);
+  }
+
   async function save() {
     if (!data) return;
 
@@ -126,9 +229,9 @@ export default function AdminNormativasPage() {
       const res = await fetch("/api/admin/normas", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(data)
       });
 
       const json = await res.json();
@@ -166,8 +269,12 @@ export default function AdminNormativasPage() {
     <main className="mx-auto max-w-6xl px-6 py-14 text-white">
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.35em] text-white/45">Panel de administración</p>
-          <h1 className="mt-3 text-4xl font-black uppercase">Editor de normativas</h1>
+          <p className="text-xs uppercase tracking-[0.35em] text-white/45">
+            Panel de administración
+          </p>
+          <h1 className="mt-3 text-4xl font-black uppercase">
+            Editor de normativas
+          </h1>
           <p className="mt-3 text-white/70">
             Crea, organiza y actualiza las categorías visibles para los jugadores.
           </p>
@@ -282,33 +389,163 @@ export default function AdminNormativasPage() {
                     />
                   </label>
 
-                  <div className="mt-4 space-y-3">
-                    {rule.points.map((point, pointIndex) => (
-                      <div key={pointIndex} className="grid gap-2">
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="text-sm text-white/60">Punto #{pointIndex + 1}</span>
-                          <button
-                            type="button"
-                            onClick={() => removePoint(catIndex, ruleIndex, pointIndex)}
-                            className="rounded-xl border border-red-500/30 px-3 py-1 text-xs text-red-300"
-                          >
-                            Eliminar punto
-                          </button>
-                        </div>
-                        <textarea
-                          className="min-h-[90px] rounded-xl border border-white/10 bg-white/5 px-4 py-3"
-                          value={point}
-                          onChange={(e) => updatePoint(catIndex, ruleIndex, pointIndex, e.target.value)}
-                        />
-                      </div>
-                    ))}
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    {!rule.table ? (
+                      <button
+                        type="button"
+                        onClick={() => enableTableMode(catIndex, ruleIndex)}
+                        className="btn-secondary"
+                      >
+                        📊 Usar columnas / rangos
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => disableTableMode(catIndex, ruleIndex)}
+                        className="btn-secondary"
+                      >
+                        📝 Usar lista normal
+                      </button>
+                    )}
                   </div>
 
-                  <div className="mt-4">
-                    <button type="button" onClick={() => addPoint(catIndex, ruleIndex)} className="btn-secondary">
-                      ➕ Añadir punto
-                    </button>
-                  </div>
+                  {rule.table ? (
+                    <div className="mt-6 space-y-5">
+                      <div className="grid gap-4 md:grid-cols-3">
+                        {rule.table.columns.map((column, columnIndex) => (
+                          <div
+                            key={columnIndex}
+                            className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
+                          >
+                            <div className="mb-4 flex items-center justify-between gap-2">
+                              <strong className="text-sm text-white/80">
+                                Columna #{columnIndex + 1}
+                              </strong>
+                              <button
+                                type="button"
+                                onClick={() => removeColumn(catIndex, ruleIndex, columnIndex)}
+                                className="rounded-xl border border-red-500/30 px-3 py-1 text-xs text-red-300"
+                              >
+                                Eliminar columna
+                              </button>
+                            </div>
+
+                            <label className="grid gap-2">
+                              <span className="text-sm text-white/60">Título de columna</span>
+                              <input
+                                className="rounded-xl border border-white/10 bg-white/5 px-4 py-3"
+                                value={column.title}
+                                onChange={(e) =>
+                                  updateColumnTitle(
+                                    catIndex,
+                                    ruleIndex,
+                                    columnIndex,
+                                    e.target.value
+                                  )
+                                }
+                              />
+                            </label>
+
+                            <div className="mt-4 space-y-3">
+                              {column.items.map((item, itemIndex) => (
+                                <div key={itemIndex} className="grid gap-2">
+                                  <div className="flex items-center justify-between gap-3">
+                                    <span className="text-sm text-white/60">
+                                      Elemento #{itemIndex + 1}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        removeColumnItem(
+                                          catIndex,
+                                          ruleIndex,
+                                          columnIndex,
+                                          itemIndex
+                                        )
+                                      }
+                                      className="rounded-xl border border-red-500/30 px-3 py-1 text-xs text-red-300"
+                                    >
+                                      Eliminar
+                                    </button>
+                                  </div>
+
+                                  <input
+                                    className="rounded-xl border border-white/10 bg-white/5 px-4 py-3"
+                                    value={item}
+                                    onChange={(e) =>
+                                      updateColumnItem(
+                                        catIndex,
+                                        ruleIndex,
+                                        columnIndex,
+                                        itemIndex,
+                                        e.target.value
+                                      )
+                                    }
+                                  />
+                                </div>
+                              ))}
+                            </div>
+
+                            <div className="mt-4">
+                              <button
+                                type="button"
+                                onClick={() => addColumnItem(catIndex, ruleIndex, columnIndex)}
+                                className="btn-secondary"
+                              >
+                                ➕ Añadir elemento
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => addColumn(catIndex, ruleIndex)}
+                        className="btn-secondary"
+                      >
+                        ➕ Añadir columna
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="mt-4 space-y-3">
+                      {rule.points.map((point, pointIndex) => (
+                        <div key={pointIndex} className="grid gap-2">
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="text-sm text-white/60">
+                              Punto #{pointIndex + 1}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => removePoint(catIndex, ruleIndex, pointIndex)}
+                              className="rounded-xl border border-red-500/30 px-3 py-1 text-xs text-red-300"
+                            >
+                              Eliminar punto
+                            </button>
+                          </div>
+                          <textarea
+                            className="min-h-[90px] rounded-xl border border-white/10 bg-white/5 px-4 py-3"
+                            value={point}
+                            onChange={(e) =>
+                              updatePoint(catIndex, ruleIndex, pointIndex, e.target.value)
+                            }
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {!rule.table ? (
+                    <div className="mt-4">
+                      <button
+                        type="button"
+                        onClick={() => addPoint(catIndex, ruleIndex)}
+                        className="btn-secondary"
+                      >
+                        ➕ Añadir punto
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
               ))}
             </div>

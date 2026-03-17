@@ -1,8 +1,16 @@
 import { getSupabaseAdmin } from "@/lib/supabase";
 
+export type RuleTableColumn = {
+  title: string;
+  items: string[];
+};
+
 export type RuleGroup = {
   title: string;
   points: string[];
+  table?: {
+    columns: RuleTableColumn[];
+  };
 };
 
 export type RuleCategory = {
