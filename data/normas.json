@@ -1,0 +1,69 @@
+{
+  "categorias": [
+    {
+      "id": "generales",
+      "emoji": "⚖️",
+      "label": "Base del servidor",
+      "title": "Normativa general",
+      "intro": "Estas reglas marcan el tono de Eden Life: respeto, fair play, interpretación coherente y cero atajos para ganar una escena.",
+      "rules": [
+        {
+          "title": "Respeto y convivencia",
+          "points": [
+            "Trata con respeto a la comunidad, al staff y a cualquier jugador incluso cuando exista tensión en el rol.",
+            "No se permite acoso, racismo, discriminación, amenazas reales ni conductas destinadas a romper el ambiente de la comunidad.",
+            "Las dudas o reclamos deben resolverse fuera de personaje y con calma, nunca cortando una escena en curso."
+          ]
+        },
+        {
+          "title": "Powergaming y acciones irreales",
+          "points": [
+            "Se sanciona cualquier acción imposible, exagerada o físicamente incoherente usada para obtener ventaja.",
+            "Los choques, lesiones y situaciones de riesgo deben rolearse de forma razonable según la gravedad del momento.",
+            "No se pueden inventar cámaras, testigos, objetos o herramientas que no existan realmente en la escena."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "civil",
+      "emoji": "🏙️",
+      "label": "Vida diaria",
+      "title": "Normas civiles",
+      "intro": "La ciudad debe sentirse viva, creíble y ordenada. El rol civil también construye historia dentro del servidor.",
+      "rules": [
+        {
+          "title": "Convivencia civil",
+          "points": [
+            "No conviertas el rol civil en un caos constante ni rompas la ambientación con conductas absurdas.",
+            "Toda empresa, negocio o actividad debe desarrollarse con coherencia y respeto por el entorno."
+          ]
+        },
+        {
+          "title": "Nueva regladasdas",
+          "points": [
+            "Escribe aquí la normaasdasdasdasd"
+          ]
+        },
+        {
+          "title": "Nueva regla",
+          "points": [
+            "Escribe aquí la norma"
+          ]
+        },
+        {
+          "title": "Nueva regla",
+          "points": [
+            "Escribe aquí la norma"
+          ]
+        },
+        {
+          "title": "Nueva regla",
+          "points": [
+            "Escribe aquí la norma"
+          ]
+        }
+      ]
+    }
+  ]
+}
