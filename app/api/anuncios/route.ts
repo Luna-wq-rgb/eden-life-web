@@ -39,7 +39,7 @@ export async function POST(req: Request) {
         button_text: body.buttonText || null,
         button_url: body.buttonUrl || null,
         is_featured: body.isFeatured || false,
-        created_by: body.admin
+        created_by: body.admin || "Admin"
       }
     ])
     .select();
@@ -49,4 +49,27 @@ export async function POST(req: Request) {
   }
 
   return NextResponse.json(data);
+}
+
+export async function DELETE(req: Request) {
+  const body = await req.json();
+  const supabase = getSupabaseAdmin();
+
+  if (!body.id) {
+    return NextResponse.json(
+      { error: "Falta el id del anuncio." },
+      { status: 400 }
+    );
+  }
+
+  const { error } = await supabase
+    .from("server_announcements")
+    .delete()
+    .eq("id", body.id);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ ok: true });
 }
