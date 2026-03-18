@@ -212,7 +212,7 @@ export default function NormasPage() {
                             {rule.points.map((point, pointIndex) => (
                               <li key={pointIndex} className="flex gap-3">
                                 <span className="mt-1 text-white/45">•</span>
-                                <span>{point}</span>
+                                <span className="whitespace-pre-line">{point}</span>
                               </li>
                             ))}
                           </ul>
