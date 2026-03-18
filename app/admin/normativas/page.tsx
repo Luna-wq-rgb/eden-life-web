@@ -124,25 +124,28 @@ export default function AdminNormativasPage() {
     setData(copy);
   }
 
-  function enableTableMode(catIndex: number, ruleIndex: number) {
+  function enableTable(catIndex: number, ruleIndex: number) {
     if (!data) return;
     const copy = structuredClone(data);
-    copy.categorias[catIndex].rules[ruleIndex].table = {
-      columns: [
-        { title: "Columna 1", items: ["Elemento 1"] },
-        { title: "Columna 2", items: ["Elemento 1"] },
-        { title: "Columna 3", items: ["Elemento 1"] }
-      ]
-    };
-    copy.categorias[catIndex].rules[ruleIndex].points = [];
+    const rule = copy.categorias[catIndex].rules[ruleIndex];
+
+    if (!rule.table) {
+      rule.table = {
+        columns: [
+          { title: "Columna 1", items: ["Elemento 1"] },
+          { title: "Columna 2", items: ["Elemento 1"] },
+          { title: "Columna 3", items: ["Elemento 1"] }
+        ]
+      };
+    }
+
     setData(copy);
   }
 
-  function disableTableMode(catIndex: number, ruleIndex: number) {
+  function disableTable(catIndex: number, ruleIndex: number) {
     if (!data) return;
     const copy = structuredClone(data);
     copy.categorias[catIndex].rules[ruleIndex].table = undefined;
-    copy.categorias[catIndex].rules[ruleIndex].points = ["Escribe aquí la norma"];
     setData(copy);
   }
 
@@ -393,20 +396,57 @@ export default function AdminNormativasPage() {
                     {!rule.table ? (
                       <button
                         type="button"
-                        onClick={() => enableTableMode(catIndex, ruleIndex)}
+                        onClick={() => enableTable(catIndex, ruleIndex)}
                         className="btn-secondary"
                       >
-                        📊 Usar columnas / rangos
+                        📊 Añadir columnas / rangos
                       </button>
                     ) : (
                       <button
                         type="button"
-                        onClick={() => disableTableMode(catIndex, ruleIndex)}
+                        onClick={() => disableTable(catIndex, ruleIndex)}
                         className="btn-secondary"
                       >
-                        📝 Usar lista normal
+                        🗑️ Quitar columnas / rangos
                       </button>
                     )}
+                  </div>
+
+                  <div className="mt-4 space-y-3">
+                    {rule.points.map((point, pointIndex) => (
+                      <div key={pointIndex} className="grid gap-2">
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-sm text-white/60">
+                            Punto #{pointIndex + 1}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => removePoint(catIndex, ruleIndex, pointIndex)}
+                            className="rounded-xl border border-red-500/30 px-3 py-1 text-xs text-red-300"
+                          >
+                            Eliminar punto
+                          </button>
+                        </div>
+
+                        <textarea
+                          className="min-h-[90px] rounded-xl border border-white/10 bg-white/5 px-4 py-3"
+                          value={point}
+                          onChange={(e) =>
+                            updatePoint(catIndex, ruleIndex, pointIndex, e.target.value)
+                          }
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-4">
+                    <button
+                      type="button"
+                      onClick={() => addPoint(catIndex, ruleIndex)}
+                      className="btn-secondary"
+                    >
+                      ➕ Añadir punto
+                    </button>
                   </div>
 
                   {rule.table ? (
@@ -505,44 +545,6 @@ export default function AdminNormativasPage() {
                         className="btn-secondary"
                       >
                         ➕ Añadir columna
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="mt-4 space-y-3">
-                      {rule.points.map((point, pointIndex) => (
-                        <div key={pointIndex} className="grid gap-2">
-                          <div className="flex items-center justify-between gap-3">
-                            <span className="text-sm text-white/60">
-                              Punto #{pointIndex + 1}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => removePoint(catIndex, ruleIndex, pointIndex)}
-                              className="rounded-xl border border-red-500/30 px-3 py-1 text-xs text-red-300"
-                            >
-                              Eliminar punto
-                            </button>
-                          </div>
-                          <textarea
-                            className="min-h-[90px] rounded-xl border border-white/10 bg-white/5 px-4 py-3"
-                            value={point}
-                            onChange={(e) =>
-                              updatePoint(catIndex, ruleIndex, pointIndex, e.target.value)
-                            }
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {!rule.table ? (
-                    <div className="mt-4">
-                      <button
-                        type="button"
-                        onClick={() => addPoint(catIndex, ruleIndex)}
-                        className="btn-secondary"
-                      >
-                        ➕ Añadir punto
                       </button>
                     </div>
                   ) : null}

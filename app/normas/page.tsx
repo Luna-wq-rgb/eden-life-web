@@ -66,6 +66,7 @@ export default function NormasPage() {
 
     return activeCategory.rules.filter((rule) => {
       const inTitle = rule.title.toLowerCase().includes(query);
+
       const inPoints = rule.points.some((point) =>
         point.toLowerCase().includes(query)
       );
@@ -206,6 +207,17 @@ export default function NormasPage() {
                       >
                         <h3 className="text-xl font-bold">{rule.title}</h3>
 
+                        {rule.points.length > 0 ? (
+                          <ul className="mt-4 space-y-3 text-white/75">
+                            {rule.points.map((point, pointIndex) => (
+                              <li key={pointIndex} className="flex gap-3">
+                                <span className="mt-1 text-white/45">•</span>
+                                <span>{point}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : null}
+
                         {rule.table?.columns?.length ? (
                           <div className="mt-5 grid gap-4 md:grid-cols-3">
                             {rule.table.columns.map((column, columnIndex) => (
@@ -225,16 +237,7 @@ export default function NormasPage() {
                               </div>
                             ))}
                           </div>
-                        ) : (
-                          <ul className="mt-4 space-y-3 text-white/75">
-                            {rule.points.map((point, pointIndex) => (
-                              <li key={pointIndex} className="flex gap-3">
-                                <span className="mt-1 text-white/45">•</span>
-                                <span>{point}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
+                        ) : null}
                       </article>
                     ))
                   ) : (
