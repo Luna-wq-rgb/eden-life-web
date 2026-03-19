@@ -392,3 +392,124 @@ body::after {
  box-shadow: 0 30px 60px rgba(0,0,0,.45);
 }
 
+.editor-shell {
+  @apply overflow-hidden rounded-[1.35rem] border border-white/10 bg-black/40;
+}
+
+.editor-toolbar {
+  @apply flex flex-wrap items-center gap-2 border-b border-white/10 bg-white/[0.03] p-3;
+}
+
+.toolbar-btn {
+  @apply rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm font-semibold text-white/80 transition hover:bg-white/[0.08] hover:text-white;
+}
+
+.toolbar-btn--active {
+  @apply border-white/20 bg-white/[0.12] text-white;
+}
+
+.toolbar-color {
+  @apply inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white/80;
+}
+
+.toolbar-color input[type="color"] {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.editor-box {
+  @apply bg-transparent p-4;
+}
+
+.editor-content-inner {
+  min-height: 140px;
+  outline: none;
+  color: white;
+}
+
+.editor-content-inner p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: rgba(255, 255, 255, 0.35);
+  pointer-events: none;
+  height: 0;
+}
+
+.editor-content-inner p,
+.rule-richtext p {
+  margin: 0 0 0.9rem;
+  line-height: 1.8;
+}
+
+.editor-content-inner h2,
+.rule-richtext h2 {
+  margin: 0.4rem 0 0.9rem;
+  font-size: 1.6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.editor-content-inner h3,
+.rule-richtext h3 {
+  margin: 0.4rem 0 0.8rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.editor-content-inner h4,
+.rule-richtext h4 {
+  margin: 0.4rem 0 0.8rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.editor-content-inner ul,
+.rule-richtext ul {
+  list-style: disc;
+  padding-left: 1.4rem;
+  margin: 0.8rem 0 1rem;
+}
+
+.editor-content-inner ol,
+.rule-richtext ol {
+  list-style: decimal;
+  padding-left: 1.4rem;
+  margin: 0.8rem 0 1rem;
+}
+
+.editor-content-inner li,
+.rule-richtext li {
+  margin: 0.3rem 0;
+}
+
+.editor-content-inner hr,
+.rule-richtext hr {
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  margin: 1rem 0;
+}
+
+.editor-content-inner img,
+.rule-richtext img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  margin: 1rem auto;
+}
+
+.rule-richtext strong {
+  font-weight: 800;
+}
+
+.rule-richtext em {
+  font-style: italic;
+}
+
+.rule-richtext u {
+  text-decoration: underline;
+}

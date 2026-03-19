@@ -30,6 +30,10 @@ type RulesDocument = {
   categorias: RuleCategory[];
 };
 
+function stripHtml(value: string) {
+  return value.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}
+
 export default function NormasPage() {
   const [rulesData, setRulesData] = useState<RulesDocument>({ categorias: [] });
   const [loading, setLoading] = useState(true);
@@ -68,7 +72,7 @@ export default function NormasPage() {
       const inTitle = rule.title.toLowerCase().includes(query);
 
       const inPoints = rule.points.some((point) =>
-        point.toLowerCase().includes(query)
+        stripHtml(point).toLowerCase().includes(query)
       );
 
       const inTable =
@@ -145,9 +149,10 @@ export default function NormasPage() {
                           <h3 className="mt-2 text-lg font-bold uppercase">
                             {category.title}
                           </h3>
-                          <p className="mt-2 line-clamp-2 text-sm text-white/60">
-                            {category.intro}
-                          </p>
+                          <div
+                            className="rule-richtext mt-2 line-clamp-2 text-sm text-white/60"
+                            dangerouslySetInnerHTML={{ __html: category.intro }}
+                          />
                         </div>
                       </div>
                     </button>
@@ -183,9 +188,10 @@ export default function NormasPage() {
                     </div>
                   </div>
 
-                  <p className="mt-4 max-w-3xl text-white/70">
-                    {activeCategory.intro}
-                  </p>
+                  <div
+                    className="rule-richtext mt-4 max-w-3xl text-white/70"
+                    dangerouslySetInnerHTML={{ __html: activeCategory.intro }}
+                  />
 
                   <div className="mt-6">
                     <input
@@ -208,14 +214,15 @@ export default function NormasPage() {
                         <h3 className="text-xl font-bold">{rule.title}</h3>
 
                         {rule.points.length > 0 ? (
-                          <ul className="mt-4 space-y-3 text-white/75">
+                          <div className="mt-4 space-y-4">
                             {rule.points.map((point, pointIndex) => (
-                              <li key={pointIndex} className="flex gap-3">
-                                <span className="mt-1 text-white/45">•</span>
-                                <span className="whitespace-pre-line">{point}</span>
-                              </li>
+                              <div
+                                key={pointIndex}
+                                className="rule-richtext text-white/75"
+                                dangerouslySetInnerHTML={{ __html: point }}
+                              />
                             ))}
-                          </ul>
+                          </div>
                         ) : null}
 
                         {rule.table?.columns?.length ? (

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { RichTextEditor } from "@/components/RichTextEditor";
 
 type RuleTableColumn = {
   title: string;
@@ -28,6 +29,9 @@ type RuleCategory = {
 type RulesDocument = {
   categorias: RuleCategory[];
 };
+
+const EMPTY_RICH_TEXT = "<p>Escribe aquí la norma</p>";
+const EMPTY_INTRO_TEXT = "<p>Describe esta sección</p>";
 
 export default function AdminNormativasPage() {
   const [data, setData] = useState<RulesDocument | null>(null);
@@ -75,13 +79,13 @@ export default function AdminNormativasPage() {
       emoji: "📘",
       label: "Nueva categoría",
       title: "Nuevo bloque",
-      intro: "Describe esta sección",
+      intro: EMPTY_INTRO_TEXT,
       rules: [
         {
           title: "Nueva regla",
-          points: ["Escribe aquí la norma"]
-        }
-      ]
+          points: [EMPTY_RICH_TEXT],
+        },
+      ],
     });
     setData(copy);
   }
@@ -98,7 +102,7 @@ export default function AdminNormativasPage() {
     const copy = structuredClone(data);
     copy.categorias[catIndex].rules.push({
       title: "Nueva regla",
-      points: ["Escribe aquí la norma"]
+      points: [EMPTY_RICH_TEXT],
     });
     setData(copy);
   }
@@ -113,7 +117,7 @@ export default function AdminNormativasPage() {
   function addPoint(catIndex: number, ruleIndex: number) {
     if (!data) return;
     const copy = structuredClone(data);
-    copy.categorias[catIndex].rules[ruleIndex].points.push("Nueva norma");
+    copy.categorias[catIndex].rules[ruleIndex].points.push(EMPTY_RICH_TEXT);
     setData(copy);
   }
 
@@ -134,8 +138,8 @@ export default function AdminNormativasPage() {
         columns: [
           { title: "Columna 1", items: ["Elemento 1"] },
           { title: "Columna 2", items: ["Elemento 1"] },
-          { title: "Columna 3", items: ["Elemento 1"] }
-        ]
+          { title: "Columna 3", items: ["Elemento 1"] },
+        ],
       };
     }
 
@@ -185,7 +189,7 @@ export default function AdminNormativasPage() {
     if (!table) return;
     table.columns.push({
       title: `Columna ${table.columns.length + 1}`,
-      items: ["Elemento 1"]
+      items: ["Elemento 1"],
     });
     setData(copy);
   }
@@ -232,9 +236,9 @@ export default function AdminNormativasPage() {
       const res = await fetch("/api/admin/normas", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
       });
 
       const json = await res.json();
@@ -357,14 +361,14 @@ export default function AdminNormativasPage() {
               </label>
             </div>
 
-            <label className="mt-4 grid gap-2">
+            <div className="mt-4 grid gap-2">
               <span className="text-sm text-white/60">Introducción</span>
-              <textarea
-                className="min-h-[100px] rounded-xl border border-white/10 bg-white/5 px-4 py-3"
+              <RichTextEditor
                 value={category.intro}
-                onChange={(e) => updateCategory(catIndex, "intro", e.target.value)}
+                onChange={(value) => updateCategory(catIndex, "intro", value)}
+                placeholder="Describe esta sección"
               />
-            </label>
+            </div>
 
             <div className="mt-6 space-y-6">
               {category.rules.map((rule, ruleIndex) => (
@@ -412,7 +416,7 @@ export default function AdminNormativasPage() {
                     )}
                   </div>
 
-                  <div className="mt-4 space-y-3">
+                  <div className="mt-4 space-y-4">
                     {rule.points.map((point, pointIndex) => (
                       <div key={pointIndex} className="grid gap-2">
                         <div className="flex items-center justify-between gap-3">
@@ -428,12 +432,12 @@ export default function AdminNormativasPage() {
                           </button>
                         </div>
 
-                        <textarea
-                          className="min-h-[90px] rounded-xl border border-white/10 bg-white/5 px-4 py-3"
+                        <RichTextEditor
                           value={point}
-                          onChange={(e) =>
-                            updatePoint(catIndex, ruleIndex, pointIndex, e.target.value)
+                          onChange={(value) =>
+                            updatePoint(catIndex, ruleIndex, pointIndex, value)
                           }
+                          placeholder="Escribe aquí la norma"
                         />
                       </div>
                     ))}
