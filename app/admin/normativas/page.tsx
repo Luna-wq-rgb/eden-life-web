@@ -1,7 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { RichTextEditor } from "@/components/RichTextEditor";
 
 type RuleTableColumn = {
   title: string;
@@ -29,14 +30,16 @@ type RulesDocument = {
   categorias: RuleCategory[];
 };
 
+const EMPTY_RICH_TEXT = "<p>Escribe aquí la norma</p>";
+const EMPTY_INTRO_TEXT = "<p>Describe esta sección</p>";
+const EMPTY_COLUMN_ITEM = "<p>Elemento 1</p>";
+
 export default function AdminNormativasPage() {
   const [data, setData] = useState<RulesDocument | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [activeCategoryId, setActiveCategoryId] = useState<string>("");
-  const [openRuleTools, setOpenRuleTools] = useState<string | null>(null);
-  const [openColumnTools, setOpenColumnTools] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/normas", {
@@ -71,10 +74,11 @@ export default function AdminNormativasPage() {
   function updateCategory(index: number, field: keyof RuleCategory, value: string) {
     if (!data) return;
     const copy = structuredClone(data);
+    const previousId = copy.categorias[index].id;
     (copy.categorias[index][field] as string) = value;
     setData(copy);
 
-    if (field === "id" && activeCategoryId === data.categorias[index].id) {
+    if (field === "id" && activeCategoryId === previousId) {
       setActiveCategoryId(value);
     }
   }
@@ -102,11 +106,11 @@ export default function AdminNormativasPage() {
       emoji: "📘",
       label: "Nueva categoría",
       title: "Nuevo bloque",
-      intro: "Describe esta sección",
+      intro: EMPTY_INTRO_TEXT,
       rules: [
         {
           title: "Nueva regla",
-          points: ["Escribe aquí la norma"],
+          points: [EMPTY_RICH_TEXT],
         },
       ],
     };
@@ -118,11 +122,9 @@ export default function AdminNormativasPage() {
 
   function removeCategory(catIndex: number) {
     if (!data) return;
-
     const copy = structuredClone(data);
     const removedId = copy.categorias[catIndex].id;
     copy.categorias.splice(catIndex, 1);
-
     setData(copy);
 
     if (removedId === activeCategoryId) {
@@ -135,7 +137,7 @@ export default function AdminNormativasPage() {
     const copy = structuredClone(data);
     copy.categorias[catIndex].rules.push({
       title: "Nueva regla",
-      points: ["Escribe aquí la norma"],
+      points: [EMPTY_RICH_TEXT],
     });
     setData(copy);
   }
@@ -150,7 +152,7 @@ export default function AdminNormativasPage() {
   function addPoint(catIndex: number, ruleIndex: number) {
     if (!data) return;
     const copy = structuredClone(data);
-    copy.categorias[catIndex].rules[ruleIndex].points.push("Nueva norma");
+    copy.categorias[catIndex].rules[ruleIndex].points.push(EMPTY_RICH_TEXT);
     setData(copy);
   }
 
@@ -160,7 +162,7 @@ export default function AdminNormativasPage() {
     copy.categorias[catIndex].rules[ruleIndex].points.splice(pointIndex, 1);
 
     if (copy.categorias[catIndex].rules[ruleIndex].points.length === 0) {
-      copy.categorias[catIndex].rules[ruleIndex].points.push("Escribe aquí la norma");
+      copy.categorias[catIndex].rules[ruleIndex].points.push(EMPTY_RICH_TEXT);
     }
 
     setData(copy);
@@ -174,9 +176,9 @@ export default function AdminNormativasPage() {
     if (!rule.table) {
       rule.table = {
         columns: [
-          { title: "Columna 1", items: ["Elemento 1"] },
-          { title: "Columna 2", items: ["Elemento 1"] },
-          { title: "Columna 3", items: ["Elemento 1"] },
+          { title: "Columna 1", items: [EMPTY_COLUMN_ITEM] },
+          { title: "Columna 2", items: [EMPTY_COLUMN_ITEM] },
+          { title: "Columna 3", items: [EMPTY_COLUMN_ITEM] },
         ],
       };
     }
@@ -225,12 +227,10 @@ export default function AdminNormativasPage() {
     const copy = structuredClone(data);
     const table = copy.categorias[catIndex].rules[ruleIndex].table;
     if (!table) return;
-
     table.columns.push({
       title: `Columna ${table.columns.length + 1}`,
-      items: ["Elemento 1"],
+      items: [EMPTY_COLUMN_ITEM],
     });
-
     setData(copy);
   }
 
@@ -254,8 +254,7 @@ export default function AdminNormativasPage() {
     const copy = structuredClone(data);
     const table = copy.categorias[catIndex].rules[ruleIndex].table;
     if (!table) return;
-
-    table.columns[columnIndex].items.push("Nuevo elemento");
+    table.columns[columnIndex].items.push(EMPTY_COLUMN_ITEM);
     setData(copy);
   }
 
@@ -273,7 +272,7 @@ export default function AdminNormativasPage() {
     table.columns[columnIndex].items.splice(itemIndex, 1);
 
     if (table.columns[columnIndex].items.length === 0) {
-      table.columns[columnIndex].items.push("Elemento 1");
+      table.columns[columnIndex].items.push(EMPTY_COLUMN_ITEM);
     }
 
     setData(copy);
@@ -307,14 +306,6 @@ export default function AdminNormativasPage() {
     } finally {
       setSaving(false);
     }
-  }
-
-  function ruleKey(catId: string, ruleIndex: number) {
-    return `${catId}-${ruleIndex}`;
-  }
-
-  function columnKey(catId: string, ruleIndex: number, columnIndex: number) {
-    return `${catId}-${ruleIndex}-${columnIndex}`;
   }
 
   if (loading) {
@@ -399,18 +390,16 @@ export default function AdminNormativasPage() {
                         : "border-white/10 bg-white/[0.03] hover:bg-white/[0.05]",
                     ].join(" ")}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="text-xs uppercase tracking-[0.28em] text-white/40">
-                          Categoría {catIndex + 1}
-                        </p>
-                        <h3 className="mt-2 truncate text-lg font-bold">
-                          {category.emoji} {category.title}
-                        </h3>
-                        <p className="mt-2 line-clamp-2 text-sm text-white/60">
-                          {category.label}
-                        </p>
-                      </div>
+                    <div className="min-w-0">
+                      <p className="text-xs uppercase tracking-[0.28em] text-white/40">
+                        Categoría {catIndex + 1}
+                      </p>
+                      <h3 className="mt-2 truncate text-lg font-bold">
+                        {category.emoji} {category.title}
+                      </h3>
+                      <p className="mt-2 line-clamp-2 text-sm text-white/60">
+                        {category.label}
+                      </p>
                     </div>
                   </button>
                 );
@@ -487,16 +476,16 @@ export default function AdminNormativasPage() {
                 </label>
               </div>
 
-              <label className="mt-4 grid gap-2">
+              <div className="mt-4 grid gap-2">
                 <span className="text-sm text-white/60">Introducción</span>
-                <textarea
-                  className="min-h-[100px] rounded-xl border border-white/10 bg-white/5 px-4 py-3"
+                <RichTextEditor
                   value={activeCategory.intro}
-                  onChange={(e) =>
-                    updateCategory(activeCategoryIndex, "intro", e.target.value)
+                  onChange={(value) =>
+                    updateCategory(activeCategoryIndex, "intro", value)
                   }
+                  placeholder="Describe esta sección"
                 />
-              </label>
+              </div>
             </section>
           ) : (
             <section className="panel p-6">
@@ -506,7 +495,7 @@ export default function AdminNormativasPage() {
 
           {activeCategory ? (
             <section className="panel p-6">
-              <div className="mb-6 flex items-center justify-between gap-4">
+              <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
                 <div>
                   <p className="text-xs uppercase tracking-[0.35em] text-white/45">
                     Reglas de la categoría
@@ -529,260 +518,214 @@ export default function AdminNormativasPage() {
                     Esta categoría no tiene reglas todavía.
                   </div>
                 ) : (
-                  activeCategory.rules.map((rule, ruleIndex) => {
-                    const currentRuleKey = ruleKey(activeCategory.id, ruleIndex);
+                  activeCategory.rules.map((rule, ruleIndex) => (
+                    <div
+                      key={`${activeCategory.id}-${ruleIndex}`}
+                      className="rounded-2xl border border-white/10 bg-white/[0.03] p-5"
+                    >
+                      <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
+                        <strong className="text-lg">Regla #{ruleIndex + 1}</strong>
 
-                    return (
-                      <div
-                        key={currentRuleKey}
-                        className="rounded-2xl border border-white/10 bg-white/[0.03] p-5"
-                      >
-                        <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
-                          <strong className="text-lg">Regla #{ruleIndex + 1}</strong>
-
-                          <div className="flex flex-wrap gap-3">
+                        <div className="flex flex-wrap gap-3">
+                          {!rule.table ? (
                             <button
                               type="button"
-                              onClick={() =>
-                                setOpenRuleTools((prev) =>
-                                  prev === currentRuleKey ? null : currentRuleKey
-                                )
-                              }
+                              onClick={() => enableTable(activeCategoryIndex, ruleIndex)}
                               className="btn-secondary"
                             >
-                              🧰 Herramientas
+                              📊 Añadir columnas / rangos
                             </button>
-
-                            <button
-                              type="button"
-                              onClick={() => removeRule(activeCategoryIndex, ruleIndex)}
-                              className="rounded-xl border border-red-500/30 px-4 py-2 text-sm text-red-300"
-                            >
-                              🗑️ Eliminar regla
-                            </button>
-                          </div>
-                        </div>
-
-                        {openRuleTools === currentRuleKey ? (
-                          <div className="mb-5 rounded-2xl border border-white/10 bg-black/20 p-4">
-                            <div className="flex flex-wrap gap-3">
+                          ) : (
+                            <>
                               <button
                                 type="button"
-                                onClick={() => addPoint(activeCategoryIndex, ruleIndex)}
+                                onClick={() => addColumn(activeCategoryIndex, ruleIndex)}
                                 className="btn-secondary"
                               >
-                                ➕ Añadir punto
+                                ➕ Añadir columna
                               </button>
 
-                              {!rule.table ? (
-                                <button
-                                  type="button"
-                                  onClick={() => enableTable(activeCategoryIndex, ruleIndex)}
-                                  className="btn-secondary"
-                                >
-                                  📊 Añadir columnas / rangos
-                                </button>
-                              ) : (
-                                <>
-                                  <button
-                                    type="button"
-                                    onClick={() => addColumn(activeCategoryIndex, ruleIndex)}
-                                    className="btn-secondary"
-                                  >
-                                    ➕ Añadir columna
-                                  </button>
+                              <button
+                                type="button"
+                                onClick={() => disableTable(activeCategoryIndex, ruleIndex)}
+                                className="btn-secondary"
+                              >
+                                🗑️ Quitar columnas / rangos
+                              </button>
+                            </>
+                          )}
 
-                                  <button
-                                    type="button"
-                                    onClick={() => disableTable(activeCategoryIndex, ruleIndex)}
-                                    className="btn-secondary"
-                                  >
-                                    🗑️ Quitar columnas / rangos
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        ) : null}
-
-                        <label className="grid gap-2">
-                          <span className="text-sm text-white/60">Título de la regla</span>
-                          <input
-                            className="rounded-xl border border-white/10 bg-white/5 px-4 py-3"
-                            value={rule.title}
-                            onChange={(e) =>
-                              updateRuleTitle(activeCategoryIndex, ruleIndex, e.target.value)
-                            }
-                          />
-                        </label>
-
-                        <div className="mt-4 space-y-3">
-                          {rule.points.map((point, pointIndex) => (
-                            <div key={pointIndex} className="grid gap-2">
-                              <div className="flex items-center justify-between gap-3">
-                                <span className="text-sm text-white/60">
-                                  Punto #{pointIndex + 1}
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    removePoint(activeCategoryIndex, ruleIndex, pointIndex)
-                                  }
-                                  className="rounded-xl border border-red-500/30 px-3 py-1 text-xs text-red-300"
-                                >
-                                  Eliminar punto
-                                </button>
-                              </div>
-
-                              <textarea
-                                className="min-h-[90px] rounded-xl border border-white/10 bg-white/5 px-4 py-3"
-                                value={point}
-                                onChange={(e) =>
-                                  updatePoint(
-                                    activeCategoryIndex,
-                                    ruleIndex,
-                                    pointIndex,
-                                    e.target.value
-                                  )
-                                }
-                              />
-                            </div>
-                          ))}
+                          <button
+                            type="button"
+                            onClick={() => removeRule(activeCategoryIndex, ruleIndex)}
+                            className="rounded-xl border border-red-500/30 px-4 py-2 text-sm text-red-300"
+                          >
+                            🗑️ Eliminar regla
+                          </button>
                         </div>
+                      </div>
 
-                        {rule.table ? (
-                          <div className="mt-6 space-y-5">
-                            <div className="grid gap-4 xl:grid-cols-3">
-                              {rule.table.columns.map((column, columnIndex) => {
-                                const currentColumnKey = columnKey(
-                                  activeCategory.id,
+                      <label className="grid gap-2">
+                        <span className="text-sm text-white/60">Título de la regla</span>
+                        <input
+                          className="rounded-xl border border-white/10 bg-white/5 px-4 py-3"
+                          value={rule.title}
+                          onChange={(e) =>
+                            updateRuleTitle(activeCategoryIndex, ruleIndex, e.target.value)
+                          }
+                        />
+                      </label>
+
+                      <div className="mt-4 space-y-4">
+                        {rule.points.map((point, pointIndex) => (
+                          <div key={pointIndex} className="grid gap-2">
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="text-sm text-white/60">
+                                Punto #{pointIndex + 1}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  removePoint(activeCategoryIndex, ruleIndex, pointIndex)
+                                }
+                                className="rounded-xl border border-red-500/30 px-3 py-1 text-xs text-red-300"
+                              >
+                                Eliminar punto
+                              </button>
+                            </div>
+
+                            <RichTextEditor
+                              value={point}
+                              onChange={(value) =>
+                                updatePoint(
+                                  activeCategoryIndex,
                                   ruleIndex,
-                                  columnIndex
-                                );
+                                  pointIndex,
+                                  value
+                                )
+                              }
+                              placeholder="Escribe aquí la norma"
+                            />
+                          </div>
+                        ))}
+                      </div>
 
-                                return (
-                                  <div
-                                    key={currentColumnKey}
-                                    className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
-                                  >
-                                    <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                                      <strong className="text-sm text-white/80">
-                                        Columna #{columnIndex + 1}
-                                      </strong>
+                      <div className="mt-4">
+                        <button
+                          type="button"
+                          onClick={() => addPoint(activeCategoryIndex, ruleIndex)}
+                          className="btn-secondary"
+                        >
+                          ➕ Añadir punto
+                        </button>
+                      </div>
 
-                                      <button
-                                        type="button"
-                                        onClick={() =>
-                                          setOpenColumnTools((prev) =>
-                                            prev === currentColumnKey ? null : currentColumnKey
-                                          )
-                                        }
-                                        className="btn-secondary"
-                                      >
-                                        🧰 Herramientas
-                                      </button>
-                                    </div>
+                      {rule.table ? (
+                        <div className="mt-6 space-y-5">
+                          <div className="grid gap-4 xl:grid-cols-3">
+                            {rule.table.columns.map((column, columnIndex) => (
+                              <div
+                                key={columnIndex}
+                                className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
+                              >
+                                <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                                  <strong className="text-sm text-white/80">
+                                    Columna #{columnIndex + 1}
+                                  </strong>
 
-                                    {openColumnTools === currentColumnKey ? (
-                                      <div className="mb-4 rounded-2xl border border-white/10 bg-black/20 p-3">
-                                        <div className="flex flex-wrap gap-3">
-                                          <button
-                                            type="button"
-                                            onClick={() =>
-                                              addColumnItem(
-                                                activeCategoryIndex,
-                                                ruleIndex,
-                                                columnIndex
-                                              )
-                                            }
-                                            className="btn-secondary"
-                                          >
-                                            ➕ Añadir elemento
-                                          </button>
+                                  <div className="flex flex-wrap gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        addColumnItem(
+                                          activeCategoryIndex,
+                                          ruleIndex,
+                                          columnIndex
+                                        )
+                                      }
+                                      className="btn-secondary"
+                                    >
+                                      ➕ Añadir elemento
+                                    </button>
 
-                                          <button
-                                            type="button"
-                                            onClick={() =>
-                                              removeColumn(
-                                                activeCategoryIndex,
-                                                ruleIndex,
-                                                columnIndex
-                                              )
-                                            }
-                                            className="rounded-xl border border-red-500/30 px-3 py-2 text-xs text-red-300"
-                                          >
-                                            🗑️ Eliminar columna
-                                          </button>
-                                        </div>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        removeColumn(
+                                          activeCategoryIndex,
+                                          ruleIndex,
+                                          columnIndex
+                                        )
+                                      }
+                                      className="rounded-xl border border-red-500/30 px-3 py-1 text-xs text-red-300"
+                                    >
+                                      Eliminar columna
+                                    </button>
+                                  </div>
+                                </div>
+
+                                <label className="grid gap-2">
+                                  <span className="text-sm text-white/60">Título de columna</span>
+                                  <input
+                                    className="rounded-xl border border-white/10 bg-white/5 px-4 py-3"
+                                    value={column.title}
+                                    onChange={(e) =>
+                                      updateColumnTitle(
+                                        activeCategoryIndex,
+                                        ruleIndex,
+                                        columnIndex,
+                                        e.target.value
+                                      )
+                                    }
+                                  />
+                                </label>
+
+                                <div className="mt-4 space-y-4">
+                                  {column.items.map((item, itemIndex) => (
+                                    <div key={itemIndex} className="grid gap-2">
+                                      <div className="flex items-center justify-between gap-3">
+                                        <span className="text-sm text-white/60">
+                                          Elemento #{itemIndex + 1}
+                                        </span>
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            removeColumnItem(
+                                              activeCategoryIndex,
+                                              ruleIndex,
+                                              columnIndex,
+                                              itemIndex
+                                            )
+                                          }
+                                          className="rounded-xl border border-red-500/30 px-3 py-1 text-xs text-red-300"
+                                        >
+                                          Eliminar
+                                        </button>
                                       </div>
-                                    ) : null}
 
-                                    <label className="grid gap-2">
-                                      <span className="text-sm text-white/60">
-                                        Título de columna
-                                      </span>
-                                      <input
-                                        className="rounded-xl border border-white/10 bg-white/5 px-4 py-3"
-                                        value={column.title}
-                                        onChange={(e) =>
-                                          updateColumnTitle(
+                                      <RichTextEditor
+                                        value={item}
+                                        onChange={(value) =>
+                                          updateColumnItem(
                                             activeCategoryIndex,
                                             ruleIndex,
                                             columnIndex,
-                                            e.target.value
+                                            itemIndex,
+                                            value
                                           )
                                         }
+                                        placeholder="Escribe aquí el contenido de la columna"
                                       />
-                                    </label>
-
-                                    <div className="mt-4 space-y-3">
-                                      {column.items.map((item, itemIndex) => (
-                                        <div key={itemIndex} className="grid gap-2">
-                                          <div className="flex items-center justify-between gap-3">
-                                            <span className="text-sm text-white/60">
-                                              Elemento #{itemIndex + 1}
-                                            </span>
-                                            <button
-                                              type="button"
-                                              onClick={() =>
-                                                removeColumnItem(
-                                                  activeCategoryIndex,
-                                                  ruleIndex,
-                                                  columnIndex,
-                                                  itemIndex
-                                                )
-                                              }
-                                              className="rounded-xl border border-red-500/30 px-3 py-1 text-xs text-red-300"
-                                            >
-                                              Eliminar
-                                            </button>
-                                          </div>
-
-                                          <input
-                                            className="rounded-xl border border-white/10 bg-white/5 px-4 py-3"
-                                            value={item}
-                                            onChange={(e) =>
-                                              updateColumnItem(
-                                                activeCategoryIndex,
-                                                ruleIndex,
-                                                columnIndex,
-                                                itemIndex,
-                                                e.target.value
-                                              )
-                                            }
-                                          />
-                                        </div>
-                                      ))}
                                     </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                        ) : null}
-                      </div>
-                    );
-                  })
+                        </div>
+                      ) : null}
+                    </div>
+                  ))
                 )}
               </div>
             </section>
