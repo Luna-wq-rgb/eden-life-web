@@ -57,14 +57,14 @@ export function Hero() {
           <div className="mt-8 flex flex-wrap gap-4">
             <Link href="/whitelist" className="btn-primary">📝 Hacer whitelist</Link>
             <Link href="/normas" className="btn-secondary">📚 Ver normativas</Link>
-            <a
-              href={process.env.NEXT_PUBLIC_DISCORD_INVITE || "#"}
+             <a
+              href="https://discord.gg/6hFFpBaJWP"
               target="_blank"
               rel="noreferrer"
               className="btn-secondary"
-            >
+>
               💬 Entrar al Discord
-            </a>
+             </a>
           </div>
 
           <div className="mt-10 grid max-w-3xl gap-4 sm:grid-cols-3">
