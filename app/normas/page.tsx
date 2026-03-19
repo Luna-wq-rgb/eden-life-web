@@ -79,7 +79,7 @@ export default function NormasPage() {
         rule.table?.columns.some((column) => {
           const inColumnTitle = column.title.toLowerCase().includes(query);
           const inItems = column.items.some((item) =>
-            item.toLowerCase().includes(query)
+            stripHtml(item).toLowerCase().includes(query)
           );
           return inColumnTitle || inItems;
         }) ?? false;
@@ -236,11 +236,15 @@ export default function NormasPage() {
                                   {column.title}
                                 </h4>
 
-                                <ul className="space-y-2 text-center text-white/75">
+                                <div className="space-y-3 text-center text-white/75">
                                   {column.items.map((item, itemIndex) => (
-                                    <li key={itemIndex}>{item}</li>
+                                    <div
+                                      key={itemIndex}
+                                      className="rule-richtext"
+                                      dangerouslySetInnerHTML={{ __html: item }}
+                                    />
                                   ))}
-                                </ul>
+                                </div>
                               </div>
                             ))}
                           </div>

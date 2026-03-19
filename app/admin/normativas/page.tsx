@@ -32,6 +32,7 @@ type RulesDocument = {
 
 const EMPTY_RICH_TEXT = "<p>Escribe aquí la norma</p>";
 const EMPTY_INTRO_TEXT = "<p>Describe esta sección</p>";
+const EMPTY_COLUMN_ITEM = "<p>Elemento 1</p>";
 
 export default function AdminNormativasPage() {
   const [data, setData] = useState<RulesDocument | null>(null);
@@ -136,9 +137,9 @@ export default function AdminNormativasPage() {
     if (!rule.table) {
       rule.table = {
         columns: [
-          { title: "Columna 1", items: ["Elemento 1"] },
-          { title: "Columna 2", items: ["Elemento 1"] },
-          { title: "Columna 3", items: ["Elemento 1"] },
+          { title: "Columna 1", items: [EMPTY_COLUMN_ITEM] },
+          { title: "Columna 2", items: [EMPTY_COLUMN_ITEM] },
+          { title: "Columna 3", items: [EMPTY_COLUMN_ITEM] },
         ],
       };
     }
@@ -189,7 +190,7 @@ export default function AdminNormativasPage() {
     if (!table) return;
     table.columns.push({
       title: `Columna ${table.columns.length + 1}`,
-      items: ["Elemento 1"],
+      items: [EMPTY_COLUMN_ITEM],
     });
     setData(copy);
   }
@@ -208,7 +209,7 @@ export default function AdminNormativasPage() {
     const copy = structuredClone(data);
     const table = copy.categorias[catIndex].rules[ruleIndex].table;
     if (!table) return;
-    table.columns[columnIndex].items.push("Nuevo elemento");
+    table.columns[columnIndex].items.push(EMPTY_COLUMN_ITEM);
     setData(copy);
   }
 
@@ -490,7 +491,7 @@ export default function AdminNormativasPage() {
                               />
                             </label>
 
-                            <div className="mt-4 space-y-3">
+                            <div className="mt-4 space-y-4">
                               {column.items.map((item, itemIndex) => (
                                 <div key={itemIndex} className="grid gap-2">
                                   <div className="flex items-center justify-between gap-3">
@@ -513,18 +514,18 @@ export default function AdminNormativasPage() {
                                     </button>
                                   </div>
 
-                                  <input
-                                    className="rounded-xl border border-white/10 bg-white/5 px-4 py-3"
+                                  <RichTextEditor
                                     value={item}
-                                    onChange={(e) =>
+                                    onChange={(value) =>
                                       updateColumnItem(
                                         catIndex,
                                         ruleIndex,
                                         columnIndex,
                                         itemIndex,
-                                        e.target.value
+                                        value
                                       )
                                     }
+                                    placeholder="Escribe aquí el contenido de la columna"
                                   />
                                 </div>
                               ))}
