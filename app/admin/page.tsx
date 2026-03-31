@@ -7,9 +7,15 @@ import { isAdminAuthenticated } from "@/lib/auth";
 const adminSections = [
   {
     title: "Whitelist",
-    description: "Revisa, aprueba o rechaza solicitudes de acceso.",
+    description: "Revisa, aprueba o rechaza solicitudes de acceso por categoría.",
     href: "/admin/whitelist",
     icon: "📝"
+  },
+  {
+    title: "Crear whitelist",
+    description: "Crea categorías nuevas, agrega preguntas y abre o cierra whitelist.",
+    href: "/admin/whitelist/crear",
+    icon: "🛠️"
   },
   {
     title: "Normativas",
@@ -54,7 +60,7 @@ export default async function AdminPage() {
             <p className="text-xs uppercase tracking-[0.35em] text-white/45">Panel secreto</p>
             <h1 className="mt-3 text-4xl font-black uppercase">Panel Admin</h1>
             <p className="mt-4 max-w-2xl text-white/70">
-              Gestiona whitelist, normativas, anuncios, jugadores y logs desde un solo lugar.
+              Gestiona whitelist, categorías, normativas, anuncios, jugadores y logs desde un solo lugar.
             </p>
           </div>
 

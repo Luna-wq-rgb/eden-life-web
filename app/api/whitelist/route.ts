@@ -1,12 +1,40 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
+import { WhitelistQuestion } from "@/lib/types";
+
+type IncomingAnswer = {
+  question: string;
+  answer: string;
+};
+
+function normalizeAnswers(raw: unknown) {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+
+  return raw
+    .map((item) => {
+      const question =
+        typeof item?.question === "string" ? item.question.trim() : "";
+      const answer =
+        typeof item?.answer === "string" ? item.answer.trim() : "";
+
+      return { question, answer };
+    })
+    .filter((item) => item.question && item.answer);
+}
+
+function questionMap(questions: WhitelistQuestion[]) {
+  return new Map(questions.map((question) => [question.label.trim(), question]));
+}
 
 export async function POST(req: Request) {
   try {
     const supabase = getSupabaseAdmin();
     const body = await req.json();
 
-    const requiredFields = [
+    const requiredBaseFields = [
+      "categoryId",
       "rpName",
       "realAge",
       "characterAge",
@@ -21,8 +49,8 @@ export async function POST(req: Request) {
       "seriousRoleplay",
     ];
 
-    for (const field of requiredFields) {
-      if (!body[field]) {
+    for (const field of requiredBaseFields) {
+      if (!body[field] || !String(body[field]).trim()) {
         return NextResponse.json(
           { message: `Falta el campo ${field}` },
           { status: 400 }
@@ -30,20 +58,110 @@ export async function POST(req: Request) {
       }
     }
 
+    const { data: category, error: categoryError } = await supabase
+      .from("whitelist_categories")
+      .select("*")
+      .eq("id", String(body.categoryId).trim())
+      .maybeSingle();
+
+    if (categoryError) {
+      return NextResponse.json(
+        {
+          message: "No se pudo validar la categoría de whitelist",
+          details: categoryError.message,
+        },
+        { status: 500 }
+      );
+    }
+
+    if (!category) {
+      return NextResponse.json(
+        { message: "La categoría de whitelist no existe." },
+        { status: 404 }
+      );
+    }
+
+    if (!category.is_active) {
+      return NextResponse.json(
+        { message: "Esta whitelist está temporalmente inactiva." },
+        { status: 403 }
+      );
+    }
+
+    const normalizedAnswers = normalizeAnswers(body.answers);
+    const expectedQuestions = (category.questions ?? []) as WhitelistQuestion[];
+    const questionsByLabel = questionMap(expectedQuestions);
+
+    if (expectedQuestions.length === 0) {
+      return NextResponse.json(
+        { message: "Esta categoría no tiene preguntas configuradas." },
+        { status: 400 }
+      );
+    }
+
+    if (normalizedAnswers.length !== expectedQuestions.length) {
+      return NextResponse.json(
+        { message: "Debes responder todas las preguntas de esta whitelist." },
+        { status: 400 }
+      );
+    }
+
+    for (const expectedQuestion of expectedQuestions) {
+      const found = normalizedAnswers.find(
+        (item) => item.question.trim() === expectedQuestion.label.trim()
+      );
+
+      if (!found || !found.answer.trim()) {
+        return NextResponse.json(
+          {
+            message: `Debes responder la pregunta: ${expectedQuestion.label}`,
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    for (const answer of normalizedAnswers) {
+      if (!questionsByLabel.has(answer.question.trim())) {
+        return NextResponse.json(
+          {
+            message: `La pregunta "${answer.question}" no pertenece a esta categoría.`,
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    const acceptedRules =
+      body.acceptedRules === true ||
+      body.acceptedRules === "true" ||
+      body.acceptedRules === "on";
+
+    if (!acceptedRules) {
+      return NextResponse.json(
+        { message: "Debes aceptar las normativas." },
+        { status: 400 }
+      );
+    }
+
     const { error } = await supabase.from("whitelist_applications").insert({
-      rp_name: body.rpName,
-      real_age: body.realAge,
-      character_age: body.characterAge,
-      email: body.email,
-      discord_id: body.discordId,
-      discord_user: body.discordUser,
-      experience: body.experience,
-      rdm: body.rdm,
-      vdm: body.vdm,
-      metagaming: body.metagaming,
-      powergaming: body.powergaming,
-      serious_roleplay: body.seriousRoleplay,
+      rp_name: String(body.rpName).trim(),
+      real_age: String(body.realAge).trim(),
+      character_age: String(body.characterAge).trim(),
+      email: String(body.email).trim(),
+      discord_id: String(body.discordId).trim(),
+      discord_user: String(body.discordUser).trim(),
+      experience: String(body.experience).trim(),
+      rdm: String(body.rdm).trim(),
+      vdm: String(body.vdm).trim(),
+      metagaming: String(body.metagaming).trim(),
+      powergaming: String(body.powergaming).trim(),
+      serious_roleplay: String(body.seriousRoleplay).trim(),
+      accepted_rules: acceptedRules,
       status: "pendiente",
+      category_id: category.id,
+      category_name: category.title,
+      answers: normalizedAnswers,
     });
 
     if (error) {
@@ -62,6 +180,7 @@ export async function POST(req: Request) {
         body: JSON.stringify({
           content:
             `📥 Nueva whitelist recibida en Eden Life\n` +
+            `Categoría: ${category.title}\n` +
             `Usuario: <@${body.discordId}>\n` +
             `Discord: ${body.discordUser}\n` +
             `Correo: ${body.email}\n` +

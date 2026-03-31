@@ -14,7 +14,9 @@ export async function POST(req: Request) {
       );
     }
 
-    const stillAllowed = await doesDiscordUserStillHaveAdminRole(adminSession.discordId);
+    const stillAllowed = await doesDiscordUserStillHaveAdminRole(
+      adminSession.discordId
+    );
 
     if (!stillAllowed) {
       return NextResponse.json(
@@ -76,6 +78,16 @@ export async function POST(req: Request) {
       );
     }
 
+    if (application.status !== "pendiente") {
+      return NextResponse.json(
+        {
+          message:
+            "Esta whitelist ya fue revisada. Si hubo un error, el usuario debe volver a enviarla.",
+        },
+        { status: 409 }
+      );
+    }
+
     const newStatus = result === "approved" ? "aprobada" : "rechazada";
 
     const { data: updatedRows, error: updateError } = await supabase
@@ -86,6 +98,7 @@ export async function POST(req: Request) {
         reviewed_at: new Date().toISOString(),
       })
       .eq("id", id)
+      .eq("status", "pendiente")
       .select("id");
 
     if (updateError) {
@@ -104,11 +117,10 @@ export async function POST(req: Request) {
     if (!updatedRows || updatedRows.length === 0) {
       return NextResponse.json(
         {
-          message: "Supabase no actualizó ninguna fila",
-          id,
-          newStatus,
+          message:
+            "La whitelist ya había sido revisada previamente. El usuario debe volver a enviarla si necesita nueva revisión.",
         },
-        { status: 500 }
+        { status: 409 }
       );
     }
 
@@ -130,6 +142,7 @@ export async function POST(req: Request) {
         body: JSON.stringify({
           content:
             `${statusText}\n` +
+            `Categoría: ${application.category_name || "General"}\n` +
             `Usuario: <@${application.discord_id}>\n` +
             `Discord: ${application.discord_user}\n` +
             `Nombre RP: ${application.rp_name}\n` +
@@ -139,7 +152,7 @@ export async function POST(req: Request) {
       });
     }
 
-    return NextResponse.redirect(new URL("/admin", req.url));
+    return NextResponse.redirect(new URL("/admin/whitelist", req.url));
   } catch (error) {
     const message =
       error instanceof Error
