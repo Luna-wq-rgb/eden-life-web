@@ -61,6 +61,7 @@ export default function AdminCrearWhitelistPage() {
   const [creating, setCreating] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [toggleMessage, setToggleMessage] = useState<string | null>(null);
+  const [busyCategoryId, setBusyCategoryId] = useState<string | null>(null);
 
   async function loadCategories() {
     setLoadingCategories(true);
@@ -171,6 +172,7 @@ export default function AdminCrearWhitelistPage() {
 
   async function handleToggle(categoryId: string, isActive: boolean) {
     setToggleMessage(null);
+    setBusyCategoryId(categoryId);
 
     try {
       const response = await fetch("/api/admin/whitelist-categories/toggle", {
@@ -195,6 +197,45 @@ export default function AdminCrearWhitelistPage() {
       await loadCategories();
     } catch {
       setToggleMessage("Ocurrió un error al actualizar la whitelist.");
+    } finally {
+      setBusyCategoryId(null);
+    }
+  }
+
+  async function handleDelete(categoryId: string, title: string) {
+    const confirmed = window.confirm(
+      `¿Seguro que quieres eliminar la whitelist "${title}"?\n\nEsto borrará también sus solicitudes.`
+    );
+
+    if (!confirmed) return;
+
+    setToggleMessage(null);
+    setBusyCategoryId(categoryId);
+
+    try {
+      const response = await fetch("/api/admin/whitelist-categories/delete", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          categoryId,
+        }),
+      });
+
+      const data = await safeJson(response);
+
+      if (!response.ok) {
+        setToggleMessage(data.message || "No se pudo eliminar la whitelist.");
+        return;
+      }
+
+      setToggleMessage(data.message || "Whitelist eliminada correctamente.");
+      await loadCategories();
+    } catch {
+      setToggleMessage("Ocurrió un error al eliminar la whitelist.");
+    } finally {
+      setBusyCategoryId(null);
     }
   }
 
@@ -212,7 +253,7 @@ export default function AdminCrearWhitelistPage() {
               Crear whitelist
             </h1>
             <p className="mt-4 max-w-3xl text-white/70">
-              Crea categorías nuevas con un constructor de preguntas premium y controla si están abiertas o cerradas.
+              Crea categorías nuevas con un constructor de preguntas premium y controla si están abiertas, cerradas o eliminadas.
             </p>
           </div>
 
@@ -347,7 +388,7 @@ export default function AdminCrearWhitelistPage() {
               </p>
               <h2 className="mt-2 text-3xl font-black">Whitelist creadas</h2>
               <p className="mt-3 text-white/65">
-                Desde aquí puedes abrir o cerrar temporalmente cualquier whitelist sin borrar su configuración.
+                Desde aquí puedes abrir, cerrar o eliminar cualquier whitelist sin tocar el resto del sistema.
               </p>
             </div>
 
@@ -362,55 +403,75 @@ export default function AdminCrearWhitelistPage() {
                 Aún no hay categorías creadas.
               </div>
             ) : (
-              categories.map((category) => (
-                <article key={category.id} className="panel premium-card p-6">
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                      <h3 className="text-2xl font-bold">{category.title}</h3>
-                      {category.description ? (
-                        <p className="mt-2 text-white/65">{category.description}</p>
-                      ) : null}
+              categories.map((category) => {
+                const isBusy = busyCategoryId === category.id;
 
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        <span className="premium-chip premium-chip--soft">
-                          {(category.questions ?? []).length} preguntas
-                        </span>
-                        <span
-                          className={`premium-chip ${
-                            category.is_active
-                              ? "premium-chip--success"
-                              : "premium-chip--danger"
-                          }`}
+                return (
+                  <article key={category.id} className="panel premium-card p-6">
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                      <div>
+                        <h3 className="text-2xl font-bold">{category.title}</h3>
+                        {category.description ? (
+                          <p className="mt-2 text-white/65">{category.description}</p>
+                        ) : null}
+
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          <span className="premium-chip premium-chip--soft">
+                            {(category.questions ?? []).length} preguntas
+                          </span>
+                          <span
+                            className={`premium-chip ${
+                              category.is_active
+                                ? "premium-chip--success"
+                                : "premium-chip--danger"
+                            }`}
+                          >
+                            {category.is_active ? "Abierta" : "Cerrada"}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-3">
+                        <button
+                          type="button"
+                          onClick={() => handleToggle(category.id, category.is_active)}
+                          className="btn-secondary"
+                          disabled={isBusy}
                         >
-                          {category.is_active ? "Abierta" : "Cerrada"}
-                        </span>
+                          {isBusy
+                            ? "Procesando..."
+                            : category.is_active
+                            ? "🔒 Cerrar WH"
+                            : "🔓 Abrir WH"}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(category.id, category.title)}
+                          className="btn-secondary"
+                          disabled={isBusy}
+                        >
+                          {isBusy ? "Procesando..." : "🗑️ Eliminar WH"}
+                        </button>
                       </div>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => handleToggle(category.id, category.is_active)}
-                      className="btn-secondary"
-                    >
-                      {category.is_active ? "🔒 Cerrar WH" : "🔓 Abrir WH"}
-                    </button>
-                  </div>
-
-                  <div className="mt-5 space-y-3">
-                    {(category.questions ?? []).map((question, index) => (
-                      <div
-                        key={`${category.id}-${question.id}-${index}`}
-                        className="rounded-[22px] border border-white/10 bg-white/[0.03] px-4 py-4"
-                      >
-                        <p className="text-xs uppercase tracking-[0.3em] text-white/40">
-                          Pregunta {index + 1}
-                        </p>
-                        <p className="mt-2 text-white/80">{question.label}</p>
-                      </div>
-                    ))}
-                  </div>
-                </article>
-              ))
+                    <div className="mt-5 space-y-3">
+                      {(category.questions ?? []).map((question, index) => (
+                        <div
+                          key={`${category.id}-${question.id}-${index}`}
+                          className="rounded-[22px] border border-white/10 bg-white/[0.03] px-4 py-4"
+                        >
+                          <p className="text-xs uppercase tracking-[0.3em] text-white/40">
+                            Pregunta {index + 1}
+                          </p>
+                          <p className="mt-2 text-white/80">{question.label}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </article>
+                );
+              })
             )}
           </div>
         </div>
