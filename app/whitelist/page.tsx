@@ -22,19 +22,28 @@ export default function WhitelistPage() {
 
   useEffect(() => {
     async function loadCategories() {
-      const response = await fetch("/api/whitelist-categories");
-      const data = await response.json();
+      try {
+        const response = await fetch("/api/whitelist-categories", {
+          cache: "no-store",
+        });
 
-      if (response.ok) {
-        const loadedCategories = data.categories ?? [];
-        setCategories(loadedCategories);
+        const data = await response.json();
 
-        if (loadedCategories.length > 0) {
-          setSelectedCategoryId(loadedCategories[0].id);
+        if (response.ok) {
+          const loadedCategories = data.categories ?? [];
+          setCategories(loadedCategories);
+
+          if (loadedCategories.length > 0) {
+            setSelectedCategoryId(loadedCategories[0].id);
+          }
+        } else {
+          setMessage(data.message || "No se pudieron cargar las categorías.");
         }
+      } catch {
+        setMessage("No se pudieron cargar las categorías.");
+      } finally {
+        setLoadingCategories(false);
       }
-
-      setLoadingCategories(false);
     }
 
     loadCategories();
@@ -63,32 +72,37 @@ export default function WhitelistPage() {
     setLoading(true);
     setMessage(null);
 
-    const formData = new FormData(event.currentTarget);
-    const payload = Object.fromEntries(formData.entries());
+    try {
+      const formData = new FormData(event.currentTarget);
+      const payload = Object.fromEntries(formData.entries());
 
-    const dynamicAnswers = (selectedCategory.questions ?? []).map((question) => ({
-      question: question.label,
-      answer: answers[question.label] ?? "",
-    }));
+      const dynamicAnswers = (selectedCategory.questions ?? []).map((question) => ({
+        question: question.label,
+        answer: answers[question.label] ?? "",
+      }));
 
-    const response = await fetch("/api/whitelist", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...payload,
-        categoryId: selectedCategory.id,
-        acceptedRules: formData.get("acceptedRules") === "on",
-        answers: dynamicAnswers,
-      }),
-    });
+      const response = await fetch("/api/whitelist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...payload,
+          categoryId: selectedCategory.id,
+          acceptedRules: formData.get("acceptedRules") === "on",
+          answers: dynamicAnswers,
+        }),
+      });
 
-    const data = await response.json();
-    setLoading(false);
-    setMessage(data.message);
+      const data = await response.json();
+      setMessage(data.message || "Respuesta recibida.");
 
-    if (response.ok) {
-      event.currentTarget.reset();
-      setAnswers({});
+      if (response.ok) {
+        event.currentTarget.reset();
+        setAnswers({});
+      }
+    } catch {
+      setMessage("Ocurrió un error al enviar la whitelist.");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -109,21 +123,21 @@ export default function WhitelistPage() {
                 Whitelist Eden Life
               </h1>
               <p className="mt-4 max-w-2xl text-white/70">
-                Selecciona una categoría y completa el formulario con calma. Cada categoría tiene sus propias preguntas.
+                Selecciona una categoría y completa el formulario. Las preguntas cambian según la whitelist creada por el admin.
               </p>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-1">
               <div className="panel p-5">
-                <p className="text-xs uppercase tracking-[0.3em] text-white/45">📝 Responde con calma</p>
+                <p className="text-xs uppercase tracking-[0.3em] text-white/45">📝 Formulario dinámico</p>
                 <p className="mt-2 text-white/68">
-                  La coherencia vale más que responder rápido. Queremos ver criterio y rol serio.
+                  Cada categoría tiene sus propias preguntas personalizadas.
                 </p>
               </div>
               <div className="panel p-5">
                 <p className="text-xs uppercase tracking-[0.3em] text-white/45">📬 Revisión manual</p>
                 <p className="mt-2 text-white/68">
-                  El equipo revisa cada solicitud dentro de la categoría correspondiente.
+                  El staff revisa cada solicitud dentro de su categoría correspondiente.
                 </p>
               </div>
             </div>
@@ -219,38 +233,33 @@ export default function WhitelistPage() {
                     <input className="input" name="discordUser" placeholder="Usuario de Discord" required />
                   </div>
 
-                  <textarea
-                    className="textarea"
-                    name="experience"
-                    placeholder="Cuéntanos tu experiencia en roleplay"
-                    required
-                  />
-                  <textarea className="textarea" name="rdm" placeholder="¿Qué es RDM?" required />
-                  <textarea className="textarea" name="vdm" placeholder="¿Qué es VDM?" required />
-                  <textarea className="textarea" name="metagaming" placeholder="¿Qué es metagaming?" required />
-                  <textarea className="textarea" name="powergaming" placeholder="¿Qué es powergaming?" required />
-                  <textarea
-                    className="textarea"
-                    name="seriousRoleplay"
-                    placeholder="Explica una situación de rol serio"
-                    required
-                  />
-
                   <div className="space-y-4">
                     <p className="text-xs uppercase tracking-[0.35em] text-white/45">
                       Preguntas de esta categoría
                     </p>
 
-                    {(selectedCategory.questions ?? []).map((question) => (
-                      <textarea
+                    {(selectedCategory.questions ?? []).map((question, index) => (
+                      <div
                         key={question.id}
-                        className="textarea"
-                        placeholder={question.placeholder || question.label}
-                        value={answers[question.label] ?? ""}
-                        onChange={(event) => handleAnswerChange(question.label, event.target.value)}
-                        required={question.required ?? true}
-                        disabled={!selectedCategory.is_active}
-                      />
+                        className="rounded-[22px] border border-white/10 bg-white/[0.03] p-4"
+                      >
+                        <p className="mb-3 text-xs uppercase tracking-[0.3em] text-white/40">
+                          Pregunta {index + 1}
+                        </p>
+
+                        <label className="mb-3 block text-sm font-semibold text-white/80">
+                          {question.label}
+                        </label>
+
+                        <textarea
+                          className="textarea"
+                          placeholder={question.placeholder || `Respuesta para: ${question.label}`}
+                          value={answers[question.label] ?? ""}
+                          onChange={(event) => handleAnswerChange(question.label, event.target.value)}
+                          required={question.required ?? true}
+                          disabled={!selectedCategory.is_active}
+                        />
+                      </div>
                     ))}
                   </div>
 

@@ -2,11 +2,6 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { WhitelistQuestion } from "@/lib/types";
 
-type IncomingAnswer = {
-  question: string;
-  answer: string;
-};
-
 function normalizeAnswers(raw: unknown) {
   if (!Array.isArray(raw)) {
     return [];
@@ -41,12 +36,6 @@ export async function POST(req: Request) {
       "email",
       "discordId",
       "discordUser",
-      "experience",
-      "rdm",
-      "vdm",
-      "metagaming",
-      "powergaming",
-      "seriousRoleplay",
     ];
 
     for (const field of requiredBaseFields) {
@@ -151,12 +140,12 @@ export async function POST(req: Request) {
       email: String(body.email).trim(),
       discord_id: String(body.discordId).trim(),
       discord_user: String(body.discordUser).trim(),
-      experience: String(body.experience).trim(),
-      rdm: String(body.rdm).trim(),
-      vdm: String(body.vdm).trim(),
-      metagaming: String(body.metagaming).trim(),
-      powergaming: String(body.powergaming).trim(),
-      serious_roleplay: String(body.seriousRoleplay).trim(),
+      experience: "",
+      rdm: "",
+      vdm: "",
+      metagaming: "",
+      powergaming: "",
+      serious_roleplay: "",
       accepted_rules: acceptedRules,
       status: "pendiente",
       category_id: category.id,
