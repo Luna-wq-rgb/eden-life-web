@@ -23,6 +23,47 @@ function questionMap(questions: WhitelistQuestion[]) {
   return new Map(questions.map((question) => [question.label.trim(), question]));
 }
 
+async function sendNewWhitelistWebhook(payload: {
+  categoryTitle: string;
+  discordId: string;
+  discordUser: string;
+  email: string;
+  rpName: string;
+}) {
+  const webhookUrl = process.env.DISCORD_NEW_WH_WEBHOOK_URL;
+
+  if (!webhookUrl) {
+    console.warn("DISCORD_NEW_WH_WEBHOOK_URL no está configurada.");
+    return;
+  }
+
+  try {
+    const response = await fetch(webhookUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        content:
+          `📥 **Nueva whitelist recibida en Eden Life**\n` +
+          `📂 **Categoría:** ${payload.categoryTitle}\n` +
+          `👤 **Usuario:** <@${payload.discordId}>\n` +
+          `💬 **Discord:** ${payload.discordUser}\n` +
+          `📧 **Correo:** ${payload.email}\n` +
+          `🎭 **Nombre RP:** ${payload.rpName}\n` +
+          `📌 **Estado:** Pendiente`,
+      }),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      console.error("Error enviando webhook de nueva whitelist:", response.status, text);
+    }
+  } catch (error) {
+    console.error("Fallo al enviar webhook de nueva whitelist:", error);
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const supabase = getSupabaseAdmin();
@@ -56,7 +97,7 @@ export async function POST(req: Request) {
     if (categoryError) {
       return NextResponse.json(
         {
-          message: "No se pudo validar la categoría de whitelist",
+          message: "No se pudo validar la categoría de whitelist.",
           details: categoryError.message,
         },
         { status: 500 }
@@ -102,9 +143,7 @@ export async function POST(req: Request) {
 
       if (!found || !found.answer.trim()) {
         return NextResponse.json(
-          {
-            message: `Debes responder la pregunta: ${expectedQuestion.label}`,
-          },
+          { message: `Debes responder la pregunta: ${expectedQuestion.label}` },
           { status: 400 }
         );
       }
@@ -155,29 +194,21 @@ export async function POST(req: Request) {
 
     if (error) {
       return NextResponse.json(
-        { message: "No se pudo guardar la whitelist", details: error.message },
+        {
+          message: "No se pudo guardar la whitelist.",
+          details: error.message,
+        },
         { status: 500 }
       );
     }
 
-    const adminWebhook = process.env.DISCORD_NEW_WH_WEBHOOK_URL;
-
-    if (adminWebhook) {
-      await fetch(adminWebhook, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          content:
-            `📥 Nueva whitelist recibida en Eden Life\n` +
-            `Categoría: ${category.title}\n` +
-            `Usuario: <@${body.discordId}>\n` +
-            `Discord: ${body.discordUser}\n` +
-            `Correo: ${body.email}\n` +
-            `Nombre RP: ${body.rpName}\n` +
-            `Estado: Pendiente`,
-        }),
-      });
-    }
+    await sendNewWhitelistWebhook({
+      categoryTitle: category.title,
+      discordId: String(body.discordId).trim(),
+      discordUser: String(body.discordUser).trim(),
+      email: String(body.email).trim(),
+      rpName: String(body.rpName).trim(),
+    });
 
     return NextResponse.json({
       message: "Tu whitelist fue enviada correctamente.",
@@ -186,7 +217,7 @@ export async function POST(req: Request) {
     const message =
       error instanceof Error
         ? error.message
-        : "Error interno al enviar la whitelist";
+        : "Error interno al enviar la whitelist.";
 
     return NextResponse.json({ message }, { status: 500 });
   }
