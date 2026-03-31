@@ -14,17 +14,20 @@ export async function POST(req: Request) {
 
     if (!stillAllowed) {
       return NextResponse.json(
-        { message: "Tu cuenta ya no tiene permisos de staff/admin." },
+        { message: "Tu cuenta ya no tiene permisos de admin/staff." },
         { status: 401 }
       );
     }
 
     const body = await req.json();
-    const categoryId = body.categoryId?.toString().trim();
+    const categoryId = String(body.categoryId || "").trim();
     const isActive = Boolean(body.isActive);
 
     if (!categoryId) {
-      return NextResponse.json({ message: "Falta la categoría." }, { status: 400 });
+      return NextResponse.json(
+        { message: "Falta la categoría." },
+        { status: 400 }
+      );
     }
 
     const supabase = getSupabaseAdmin();
@@ -53,11 +56,14 @@ export async function POST(req: Request) {
         : "Whitelist cerrada correctamente.",
     });
   } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Error interno al actualizar la whitelist";
-
-    return NextResponse.json({ message }, { status: 500 });
+    return NextResponse.json(
+      {
+        message:
+          error instanceof Error
+            ? error.message
+            : "Error interno al actualizar la whitelist.",
+      },
+      { status: 500 }
+    );
   }
 }

@@ -12,18 +12,21 @@ export async function GET() {
 
     if (error) {
       return NextResponse.json(
-        { message: "No se pudieron cargar las categorías", details: error.message },
+        { message: "No se pudieron cargar las categorías.", details: error.message },
         { status: 500 }
       );
     }
 
     return NextResponse.json({ categories: data ?? [] });
   } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Error interno al cargar las categorías";
-
-    return NextResponse.json({ message }, { status: 500 });
+    return NextResponse.json(
+      {
+        message:
+          error instanceof Error
+            ? error.message
+            : "Error interno al cargar las categorías.",
+      },
+      { status: 500 }
+    );
   }
 }

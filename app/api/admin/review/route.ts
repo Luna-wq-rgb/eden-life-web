@@ -8,15 +8,10 @@ export async function POST(req: Request) {
     const adminSession = await getAdminSession();
 
     if (!adminSession || !adminSession.passwordVerified) {
-      return NextResponse.json(
-        { message: "No autorizado." },
-        { status: 401 }
-      );
+      return NextResponse.json({ message: "No autorizado." }, { status: 401 });
     }
 
-    const stillAllowed = await doesDiscordUserStillHaveAdminRole(
-      adminSession.discordId
-    );
+    const stillAllowed = await doesDiscordUserStillHaveAdminRole(adminSession.discordId);
 
     if (!stillAllowed) {
       return NextResponse.json(
@@ -35,21 +30,14 @@ export async function POST(req: Request) {
 
     if (!id || !result) {
       return NextResponse.json(
-        {
-          message: "Faltan datos para revisar la whitelist",
-          id,
-          result,
-        },
+        { message: "Faltan datos para revisar la whitelist." },
         { status: 400 }
       );
     }
 
     if (result !== "approved" && result !== "rejected") {
       return NextResponse.json(
-        {
-          message: "Resultado inválido",
-          result,
-        },
+        { message: "Resultado inválido." },
         { status: 400 }
       );
     }
@@ -63,9 +51,8 @@ export async function POST(req: Request) {
     if (fetchError) {
       return NextResponse.json(
         {
-          message: "Error al buscar la whitelist en Supabase",
+          message: "Error al buscar la whitelist.",
           details: fetchError.message,
-          code: fetchError.code,
         },
         { status: 500 }
       );
@@ -73,7 +60,7 @@ export async function POST(req: Request) {
 
     if (!application) {
       return NextResponse.json(
-        { message: "No se encontró la whitelist", id },
+        { message: "No se encontró la whitelist." },
         { status: 404 }
       );
     }
@@ -104,11 +91,8 @@ export async function POST(req: Request) {
     if (updateError) {
       return NextResponse.json(
         {
-          message: "No se pudo actualizar el estado en Supabase",
+          message: "No se pudo actualizar el estado.",
           details: updateError.message,
-          code: updateError.code,
-          id,
-          newStatus,
         },
         { status: 500 }
       );
@@ -118,7 +102,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           message:
-            "La whitelist ya había sido revisada previamente. El usuario debe volver a enviarla si necesita nueva revisión.",
+            "La whitelist ya había sido revisada. El usuario debe volver a enviarla si necesita nueva revisión.",
         },
         { status: 409 }
       );
@@ -154,11 +138,14 @@ export async function POST(req: Request) {
 
     return NextResponse.redirect(new URL("/admin/whitelist", req.url));
   } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Error interno al procesar la revisión";
-
-    return NextResponse.json({ message }, { status: 500 });
+    return NextResponse.json(
+      {
+        message:
+          error instanceof Error
+            ? error.message
+            : "Error interno al procesar la revisión.",
+      },
+      { status: 500 }
+    );
   }
 }

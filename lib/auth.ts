@@ -75,36 +75,50 @@ export async function doesDiscordUserStillHaveAdminRole(discordId: string) {
     .map((x) => x.trim())
     .filter(Boolean);
 
-  if (!guildId) throw new Error("Falta DISCORD_ADMIN_GUILD_ID");
-  if (!botToken) throw new Error("Falta DISCORD_BOT_TOKEN");
+  if (!guildId) {
+    throw new Error("Falta DISCORD_ADMIN_GUILD_ID");
+  }
+
+  if (!botToken) {
+    throw new Error("Falta DISCORD_BOT_TOKEN");
+  }
+
   if (allowedRoleIds.length === 0) {
     throw new Error("Falta DISCORD_ALLOWED_ADMIN_ROLE_IDS");
   }
 
-  const res = await fetch(
-    `https://discord.com/api/v10/guilds/${guildId}/members/${discordId}`,
-    {
-      headers: {
-        Authorization: `Bot ${botToken}`,
-        "Content-Type": "application/json",
-      },
-      cache: "no-store",
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+
+  try {
+    const res = await fetch(
+      `https://discord.com/api/v10/guilds/${guildId}/members/${discordId}`,
+      {
+        headers: {
+          Authorization: `Bot ${botToken}`,
+          "Content-Type": "application/json",
+        },
+        cache: "no-store",
+        signal: controller.signal,
+      }
+    );
+
+    if (res.status === 404) {
+      return false;
     }
-  );
 
-  if (res.status === 404) {
-    return false;
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Discord devolvió ${res.status}: ${text}`);
+    }
+
+    const member = (await res.json()) as { roles?: string[] };
+    const roles = member.roles || [];
+
+    return allowedRoleIds.some((roleId) => roles.includes(roleId));
+  } finally {
+    clearTimeout(timeout);
   }
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Discord devolvió ${res.status}: ${text}`);
-  }
-
-  const member = (await res.json()) as { roles?: string[] };
-  const roles = member.roles || [];
-
-  return allowedRoleIds.some((roleId) => roles.includes(roleId));
 }
 
 export async function isAdminAuthenticated() {
