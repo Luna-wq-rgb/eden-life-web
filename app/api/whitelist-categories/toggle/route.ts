@@ -2,6 +2,13 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { doesDiscordUserStillHaveAdminRole, getAdminSession } from "@/lib/auth";
 
+export async function GET() {
+  return NextResponse.json({
+    ok: true,
+    message: "Ruta toggle whitelist activa.",
+  });
+}
+
 export async function POST(req: Request) {
   try {
     const adminSession = await getAdminSession();
@@ -37,13 +44,15 @@ export async function POST(req: Request) {
 
     const supabase = getSupabaseAdmin();
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("whitelist_categories")
       .update({
         is_active: isActive,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", categoryId);
+      .eq("id", categoryId)
+      .select("id, title, is_active")
+      .maybeSingle();
 
     if (error) {
       return NextResponse.json(
@@ -55,10 +64,18 @@ export async function POST(req: Request) {
       );
     }
 
+    if (!data) {
+      return NextResponse.json(
+        { message: "No se encontró la categoría para actualizar." },
+        { status: 404 }
+      );
+    }
+
     return NextResponse.json({
       message: isActive
         ? "Whitelist abierta correctamente."
         : "Whitelist cerrada correctamente.",
+      category: data,
     });
   } catch (error) {
     return NextResponse.json(

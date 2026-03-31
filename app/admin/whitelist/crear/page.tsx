@@ -26,16 +26,16 @@ async function safeJson(response: Response) {
     try {
       return JSON.parse(text);
     } catch {
-      return { message: "El servidor devolvió un JSON inválido." };
+      return { message: "El servidor devolvió JSON inválido." };
     }
   }
 
   if (response.status === 404) {
-    return { message: "La ruta API no existe o no fue desplegada todavía." };
+    return { message: "La ruta API no existe en producción o no se desplegó todavía." };
   }
 
   if (response.status === 401) {
-    return { message: "Tu sesión de admin expiró o ya no tienes permisos." };
+    return { message: "Tu sesión expiró o ya no tienes permisos de admin." };
   }
 
   if (response.status === 500) {
@@ -64,7 +64,6 @@ export default function AdminCrearWhitelistPage() {
 
   async function loadCategories() {
     setLoadingCategories(true);
-    setToggleMessage(null);
 
     try {
       const response = await fetch("/api/whitelist-categories", {
@@ -213,9 +212,7 @@ export default function AdminCrearWhitelistPage() {
               Crear whitelist
             </h1>
             <p className="mt-4 max-w-3xl text-white/70">
-              Crea categorías nuevas con un constructor de preguntas más premium,
-              limpio y ordenado. También puedes abrir o cerrar cada whitelist
-              temporalmente.
+              Crea categorías nuevas con un constructor de preguntas premium y controla si están abiertas o cerradas.
             </p>
           </div>
 
@@ -241,8 +238,7 @@ export default function AdminCrearWhitelistPage() {
                 </p>
                 <h2 className="mt-2 text-3xl font-black">Configurar whitelist</h2>
                 <p className="mt-3 text-white/65">
-                  Rellena la información principal y luego agrega las preguntas una
-                  por una.
+                  Rellena la información principal y luego agrega las preguntas una por una.
                 </p>
               </div>
 
@@ -351,8 +347,7 @@ export default function AdminCrearWhitelistPage() {
               </p>
               <h2 className="mt-2 text-3xl font-black">Whitelist creadas</h2>
               <p className="mt-3 text-white/65">
-                Desde aquí puedes abrir o cerrar temporalmente cualquier whitelist
-                sin borrar su configuración.
+                Desde aquí puedes abrir o cerrar temporalmente cualquier whitelist sin borrar su configuración.
               </p>
             </div>
 
