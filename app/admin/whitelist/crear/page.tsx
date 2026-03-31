@@ -19,15 +19,32 @@ function makeQuestion(id?: string): DraftQuestion {
 }
 
 async function safeJson(response: Response) {
+  const contentType = response.headers.get("content-type") || "";
   const text = await response.text();
 
-  try {
-    return JSON.parse(text);
-  } catch {
-    return {
-      message: text || "Respuesta inválida del servidor.",
-    };
+  if (contentType.includes("application/json")) {
+    try {
+      return JSON.parse(text);
+    } catch {
+      return { message: "El servidor devolvió un JSON inválido." };
+    }
   }
+
+  if (response.status === 404) {
+    return { message: "La ruta API no existe o no fue desplegada todavía." };
+  }
+
+  if (response.status === 401) {
+    return { message: "Tu sesión de admin expiró o ya no tienes permisos." };
+  }
+
+  if (response.status === 500) {
+    return { message: "El servidor devolvió un error interno." };
+  }
+
+  return {
+    message: "El servidor devolvió una respuesta no válida.",
+  };
 }
 
 export default function AdminCrearWhitelistPage() {
